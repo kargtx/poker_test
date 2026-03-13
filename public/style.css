@@ -1,0 +1,118 @@
+﻿:root {
+  --bg: #f2efe8;
+  --card: #fff8ec;
+  --ink: #1b1b1b;
+  --accent: #0f6b3f;
+  --danger: #b11a1a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Georgia", "Times New Roman", serif;
+  background: radial-gradient(circle at 20% 20%, #fff7d9, #e6dfcf 45%, #d9d0bf 100%);
+  color: var(--ink);
+}
+
+.app {
+  max-width: 900px;
+  margin: 32px auto;
+  padding: 24px;
+}
+
+header h1 {
+  margin: 0 0 8px;
+  font-size: 36px;
+  letter-spacing: 1px;
+}
+
+header p { margin: 0 0 24px; }
+
+.panel {
+  background: var(--card);
+  border: 2px solid #c9bca3;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+}
+
+.panel.hidden { display: none; }
+
+label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+input {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 6px;
+  border: 1px solid #b6a98f;
+  border-radius: 8px;
+  background: #fffdf6;
+}
+
+button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.danger { background: var(--danger); }
+
+.roomLine { margin-bottom: 16px; font-weight: 600; }
+
+.board {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.community .card,
+.handCards .card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 64px;
+  margin-right: 8px;
+  background: #fff;
+  border: 1px solid #b6a98f;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.player {
+  border: 1px solid #b6a98f;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fffdf6;
+}
+
+.player.turn { outline: 2px solid var(--accent); }
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  align-items: center;
+}
+
+.hand { margin: 16px 0; }
+
+.handTitle { font-weight: 600; margin-bottom: 6px; }

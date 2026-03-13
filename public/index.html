@@ -1,0 +1,54 @@
+﻿<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Poker Rooms</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Poker Rooms</h1>
+      <p>Введи имя и номер комнаты, чтобы играть вместе</p>
+    </header>
+
+    <section class="panel" id="joinPanel">
+      <label>Имя
+        <input id="nameInput" placeholder="Ваше имя" />
+      </label>
+      <label>Комната
+        <input id="roomInput" placeholder="Например 777" />
+      </label>
+      <button id="joinBtn">Войти</button>
+    </section>
+
+    <section class="panel hidden" id="gamePanel">
+      <div class="roomLine">Комната: <span id="roomLabel"></span></div>
+
+      <div class="board">
+        <div class="community" id="community"></div>
+        <div class="pot">Банк: <span id="pot">0</span></div>
+      </div>
+
+      <div class="players" id="players"></div>
+
+      <div class="hand">
+        <div class="handTitle">Ваши карты</div>
+        <div class="handCards" id="hand"></div>
+      </div>
+
+      <div class="actions">
+        <button id="startBtn">Раздать</button>
+        <button id="dealBtn">Открыть карты стола</button>
+        <input id="betInput" type="number" min="0" step="10" value="10" />
+        <button id="betBtn">Сделать ставку</button>
+        <button id="foldBtn" class="danger">Фолд</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
