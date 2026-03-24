@@ -180,6 +180,18 @@ button.danger { background: linear-gradient(180deg, #c63636, #8f1d1d); }
   align-items: center;
 }
 
+.admin-actions {
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.admin-btn {
+  max-width: 180px;
+  justify-self: end;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
 .hand { margin: 16px 0; }
 
 .handTitle { font-weight: 600; margin-bottom: 6px; }
@@ -211,6 +223,8 @@ button.danger { background: linear-gradient(180deg, #c63636, #8f1d1d); }
   .handCards .card { width: 44px; height: 62px; margin-right: 8px; }
   .players { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .actions { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .admin-actions { justify-content: stretch; }
+  .admin-btn { max-width: 100%; justify-self: stretch; }
 }
 
 @media (max-width: 480px) {
