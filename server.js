@@ -192,10 +192,6 @@ function finishRound(state, winners, winningType) {
 function checkWinner(state) {
   if (!state.gameStarted) return;
   const active = activePlayers(state);
-  if (active.length === 1) {
-    finishRound(state, active, 0);
-    return;
-  }
   if (state.community.length < 5) return;
 
   let bestRank = null;
@@ -313,11 +309,12 @@ io.on("connection", (socket) => {
     if (!player || state.currentTurn !== socket.id) return;
     const desired = Number(amount) || 0;
     const bet = Math.max(0, Math.min(player.chips, desired));
-    if (bet < state.currentBet) return;
+    const afterBet = player.bet + bet;
+    if (afterBet < state.currentBet) return;
     player.chips -= bet;
     player.bet += bet;
     state.pot += bet;
-    if (bet > state.currentBet) state.currentBet = bet;
+    if (player.bet > state.currentBet) state.currentBet = player.bet;
     nextTurn(roomId);
     checkWinner(state);
     io.to(roomId).emit("state", publicState(roomId));

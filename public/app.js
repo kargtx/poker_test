@@ -100,6 +100,16 @@ function renderState(state) {
 
   if (startBtn) startBtn.disabled = state.gameStarted || (state.dealerId && !isDealer);
   if (dealBtn) dealBtn.disabled = !state.gameStarted || !isDealer;
+
+  if (betInput) {
+    const self = state.players.find((p) => p.id === socket.id);
+    const already = self ? Number(self.bet) || 0 : 0;
+    const minBet = Math.max(0, (Number(state.currentBet) || 0) - already);
+    betInput.min = String(minBet);
+    const currentVal = Number(betInput.value) || 0;
+    if (currentVal < minBet) betInput.value = String(minBet);
+    if (!state.gameStarted) betInput.value = String(minBet);
+  }
 }
 
 function renderHand() {
