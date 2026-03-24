@@ -178,7 +178,6 @@ function activePlayers(state) {
 }
 
 function resetBettingRound(state) {
-  state.currentBet = 0;
   state.acted = new Set();
   state.lastActorId = null;
   for (const p of state.players.values()) p.bet = 0;
@@ -318,6 +317,7 @@ io.on("connection", (socket) => {
     state.gameStarted = true;
     state.currentTurn = null;
     state.winner = null;
+    state.currentBet = 0;
     resetBettingRound(state);
 
     for (const p of state.players.values()) {
