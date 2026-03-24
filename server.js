@@ -180,7 +180,6 @@ function activePlayers(state) {
 function resetBettingRound(state) {
   state.acted = new Set();
   state.lastActorId = null;
-  for (const p of state.players.values()) p.bet = 0;
 }
 
 function bettingRoundComplete(state) {
