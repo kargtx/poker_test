@@ -99,7 +99,7 @@ function renderState(state) {
   }
 
   if (startBtn) startBtn.disabled = state.gameStarted || (state.dealerId && !isDealer);
-  if (dealBtn) dealBtn.disabled = !state.gameStarted || !isDealer;
+  if (dealBtn) dealBtn.disabled = true;
 
   if (betInput) {
     const self = state.players.find((p) => p.id === socket.id);

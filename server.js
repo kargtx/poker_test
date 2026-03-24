@@ -30,6 +30,8 @@ function getRoomState(roomId) {
       dealerId: null,
       winner: null,
       currentBet: 0,
+      acted: new Set(),
+      lastActorId: null,
     });
   }
   return rooms.get(roomId);
@@ -64,19 +66,26 @@ function chooseDealer(state) {
   return ids[idx];
 }
 
-function nextTurn(roomId) {
+function orderedIds(state) {
+  return Array.from(state.players.keys());
+}
+
+function nextActiveAfter(state, fromId) {
+  const ids = orderedIds(state);
+  if (ids.length === 0) return null;
+  const startIndex = fromId && ids.includes(fromId) ? ids.indexOf(fromId) : -1;
+  for (let i = 1; i <= ids.length; i += 1) {
+    const id = ids[(startIndex + i) % ids.length];
+    const p = state.players.get(id);
+    if (p && !p.folded) return id;
+  }
+  return null;
+}
+
+function nextTurn(roomId, fromId = null) {
   const state = getRoomState(roomId);
-  const ids = Array.from(state.players.keys()).filter((id) => !state.players.get(id).folded);
-  if (ids.length === 0) {
-    state.currentTurn = null;
-    return;
-  }
-  if (!state.currentTurn || !ids.includes(state.currentTurn)) {
-    state.currentTurn = ids[0];
-    return;
-  }
-  const idx = ids.indexOf(state.currentTurn);
-  state.currentTurn = ids[(idx + 1) % ids.length];
+  const next = nextActiveAfter(state, fromId ?? state.currentTurn);
+  state.currentTurn = next;
 }
 
 function cardValue(rank) {
@@ -168,6 +177,37 @@ function activePlayers(state) {
   return Array.from(state.players.values()).filter((p) => !p.folded);
 }
 
+function resetBettingRound(state) {
+  state.currentBet = 0;
+  state.acted = new Set();
+  state.lastActorId = null;
+  for (const p of state.players.values()) p.bet = 0;
+}
+
+function bettingRoundComplete(state) {
+  const active = activePlayers(state);
+  if (active.length <= 1) return false;
+  for (const p of active) {
+    if (p.bet !== state.currentBet) return false;
+    if (!state.acted.has(p.id)) return false;
+  }
+  return true;
+}
+
+function advanceStreet(state) {
+  if (state.community.length === 0) {
+    state.community.push(state.deck.pop(), state.deck.pop(), state.deck.pop());
+  } else if (state.community.length < 5) {
+    state.community.push(state.deck.pop());
+  }
+  if (state.community.length === 5) {
+    checkWinner(state);
+    return;
+  }
+  resetBettingRound(state);
+  state.currentTurn = nextActiveAfter(state, state.lastActorId);
+}
+
 function finishRound(state, winners, winningType) {
   if (winners.length === 0) return;
   const share = Math.floor(state.pot / winners.length);
@@ -183,6 +223,9 @@ function finishRound(state, winners, winningType) {
   for (const p of state.players.values()) p.bet = 0;
   state.gameStarted = false;
   state.currentTurn = null;
+  state.currentBet = 0;
+  state.acted = new Set();
+  state.lastActorId = null;
   state.winner = {
     names: winners.map((w) => w.name),
     hand: handName(winningType),
@@ -192,6 +235,10 @@ function finishRound(state, winners, winningType) {
 function checkWinner(state) {
   if (!state.gameStarted) return;
   const active = activePlayers(state);
+  if (active.length === 1) {
+    finishRound(state, active, 0);
+    return;
+  }
   if (state.community.length < 5) return;
 
   let bestRank = null;
@@ -271,12 +318,11 @@ io.on("connection", (socket) => {
     state.gameStarted = true;
     state.currentTurn = null;
     state.winner = null;
-    state.currentBet = 0;
+    resetBettingRound(state);
 
     for (const p of state.players.values()) {
       p.hand = [state.deck.pop(), state.deck.pop()];
       p.folded = false;
-      p.bet = 0;
     }
 
     nextTurn(roomId);
@@ -291,13 +337,7 @@ io.on("connection", (socket) => {
     if (!roomId) return;
     const state = getRoomState(roomId);
     if (!state.gameStarted) return;
-    if (state.dealerId && socket.id !== state.dealerId) return;
-    if (state.community.length === 0) {
-      state.community.push(state.deck.pop(), state.deck.pop(), state.deck.pop());
-    } else if (state.community.length < 5) {
-      state.community.push(state.deck.pop());
-    }
-    checkWinner(state);
+    // Автоматическое открытие карт происходит после завершения круга ставок
     io.to(roomId).emit("state", publicState(roomId));
   });
 
@@ -311,11 +351,19 @@ io.on("connection", (socket) => {
     const bet = Math.max(0, Math.min(player.chips, desired));
     const afterBet = player.bet + bet;
     if (afterBet < state.currentBet) return;
+    const prevCurrentBet = state.currentBet;
     player.chips -= bet;
     player.bet += bet;
     state.pot += bet;
     if (player.bet > state.currentBet) state.currentBet = player.bet;
-    nextTurn(roomId);
+    if (state.currentBet > prevCurrentBet) state.acted = new Set([player.id]);
+    else state.acted.add(player.id);
+    state.lastActorId = player.id;
+    if (bettingRoundComplete(state)) {
+      advanceStreet(state);
+    } else {
+      nextTurn(roomId, player.id);
+    }
     checkWinner(state);
     io.to(roomId).emit("state", publicState(roomId));
   });
@@ -327,7 +375,12 @@ io.on("connection", (socket) => {
     const player = state.players.get(socket.id);
     if (!player || state.currentTurn !== socket.id) return;
     player.folded = true;
-    nextTurn(roomId);
+    state.lastActorId = player.id;
+    if (bettingRoundComplete(state)) {
+      advanceStreet(state);
+    } else {
+      nextTurn(roomId, player.id);
+    }
     checkWinner(state);
     io.to(roomId).emit("state", publicState(roomId));
   });
