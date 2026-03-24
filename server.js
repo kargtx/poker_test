@@ -29,6 +29,7 @@ function getRoomState(roomId) {
       gameStarted: false,
       dealerId: null,
       winner: null,
+      currentBet: 0,
     });
   }
   return rooms.get(roomId);
@@ -222,12 +223,14 @@ function publicState(roomId) {
       bet: p.bet,
       isTurn: state.currentTurn === p.id,
       isDealer: state.dealerId === p.id,
+      hand: state.winner ? p.hand : null,
     })),
     community: state.community,
     pot: state.pot,
     gameStarted: state.gameStarted,
     dealerId: state.dealerId,
     winner: state.winner,
+    currentBet: state.currentBet,
   };
 }
 
@@ -272,6 +275,7 @@ io.on("connection", (socket) => {
     state.gameStarted = true;
     state.currentTurn = null;
     state.winner = null;
+    state.currentBet = 0;
 
     for (const p of state.players.values()) {
       p.hand = [state.deck.pop(), state.deck.pop()];
@@ -307,10 +311,13 @@ io.on("connection", (socket) => {
     const state = getRoomState(roomId);
     const player = state.players.get(socket.id);
     if (!player || state.currentTurn !== socket.id) return;
-    const bet = Math.max(0, Math.min(player.chips, Number(amount) || 0));
+    const desired = Number(amount) || 0;
+    const bet = Math.max(0, Math.min(player.chips, desired));
+    if (bet < state.currentBet) return;
     player.chips -= bet;
     player.bet += bet;
     state.pot += bet;
+    if (bet > state.currentBet) state.currentBet = bet;
     nextTurn(roomId);
     checkWinner(state);
     io.to(roomId).emit("state", publicState(roomId));

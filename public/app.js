@@ -42,10 +42,18 @@ function emitJoin() {
 
 function cardView(card) {
   if (!card) return "";
-  const rank = card[0];
+  const rankRaw = card[0];
   const suit = card[1];
+  const rank = rankRaw === "T" ? "10" : rankRaw;
   const suitChar = { H: "♥", D: "♦", C: "♣", S: "♠" }[suit];
   return `${rank}${suitChar}`;
+}
+
+function cardClass(card) {
+  if (!card) return "card";
+  const suit = card[1];
+  const isRed = suit === "H" || suit === "D";
+  return `card ${isRed ? "card-red" : "card-black"}`;
 }
 
 function renderState(state) {
@@ -54,11 +62,15 @@ function renderState(state) {
   state.players.forEach((p) => {
     const div = document.createElement("div");
     div.className = "player" + (p.isTurn ? " turn" : "");
+    const cardsHtml = Array.isArray(p.hand)
+      ? `<div class="pCards">${p.hand.map((c) => `<span class="${cardClass(c)}">${cardView(c)}</span>`).join("")}</div>`
+      : "";
     div.innerHTML = `
       <div class="pName">${p.name}</div>
       <div class="pChips">Фишки: ${p.chips}</div>
       <div class="pBet">Ставка: ${p.bet}</div>
       <div class="pStatus">${p.folded ? "Фолд" : p.isTurn ? "Ход" : ""}</div>
+      ${cardsHtml}
     `;
     playersEl.appendChild(div);
   });
@@ -66,7 +78,7 @@ function renderState(state) {
   communityEl.innerHTML = "";
   state.community.forEach((c) => {
     const span = document.createElement("span");
-    span.className = "card";
+    span.className = cardClass(c);
     span.textContent = cardView(c);
     communityEl.appendChild(span);
   });
@@ -94,7 +106,7 @@ function renderHand() {
   handEl.innerHTML = "";
   myHand.forEach((c) => {
     const span = document.createElement("span");
-    span.className = "card";
+    span.className = cardClass(c);
     span.textContent = cardView(c);
     handEl.appendChild(span);
   });

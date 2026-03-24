@@ -123,6 +123,9 @@ button.danger { background: var(--danger); }
   font-weight: 700;
 }
 
+.card-red { color: #b11a1a; }
+.card-black { color: #1b1b1b; }
+
 .players {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -135,6 +138,13 @@ button.danger { background: var(--danger); }
   padding: 10px;
   border-radius: 8px;
   background: #fffdf6;
+}
+
+.pCards .card {
+  width: 32px;
+  height: 44px;
+  margin-right: 6px;
+  font-size: 12px;
 }
 
 .player.turn { outline: 2px solid var(--accent); }
