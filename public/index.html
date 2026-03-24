@@ -20,12 +20,18 @@
       <label>Комната
         <input id="roomInput" placeholder="Например 777" />
       </label>
+      <label class="checkbox">
+        <input id="canDealerInput" type="checkbox" checked />
+        Я могу быть дилером
+      </label>
       <button id="joinBtn">Войти</button>
     </section>
 
     <section class="panel hidden" id="gamePanel">
       <div class="roomLine">Комната: <span id="roomLabel"></span></div>
       <div class="statusLine">Связь: <span id="connStatus" class="status status-bad">нет</span></div>
+      <div class="statusLine">Дилер: <span id="dealerLabel">—</span></div>
+      <div class="statusLine">Победитель: <span id="winnerLabel">—</span></div>
 
       <div class="board">
         <div class="community" id="community"></div>

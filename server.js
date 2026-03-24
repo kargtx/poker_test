@@ -27,6 +27,8 @@ function getRoomState(roomId) {
       pot: 0,
       currentTurn: null,
       gameStarted: false,
+      dealerId: null,
+      winner: null,
     });
   }
   return rooms.get(roomId);
@@ -48,6 +50,19 @@ function createDeck() {
   return deck;
 }
 
+function eligibleDealerIds(state) {
+  const eligible = Array.from(state.players.values()).filter((p) => p.canBeDealer);
+  if (eligible.length > 0) return eligible.map((p) => p.id);
+  return Array.from(state.players.keys());
+}
+
+function chooseDealer(state) {
+  const ids = eligibleDealerIds(state);
+  if (ids.length === 0) return null;
+  const idx = Math.floor(Math.random() * ids.length);
+  return ids[idx];
+}
+
 function nextTurn(roomId) {
   const state = getRoomState(roomId);
   const ids = Array.from(state.players.keys()).filter((id) => !state.players.get(id).folded);
@@ -63,6 +78,139 @@ function nextTurn(roomId) {
   state.currentTurn = ids[(idx + 1) % ids.length];
 }
 
+function cardValue(rank) {
+  return { "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, T: 10, J: 11, Q: 12, K: 13, A: 14 }[rank];
+}
+
+function parseCard(card) {
+  return { rank: card[0], suit: card[1], value: cardValue(card[0]) };
+}
+
+function straightHigh(values) {
+  const uniq = Array.from(new Set(values)).sort((a, b) => b - a);
+  if (uniq.length !== 5) return null;
+  if (uniq[0] - uniq[4] === 4) return uniq[0];
+  const wheel = [14, 5, 4, 3, 2];
+  if (wheel.every((v) => uniq.includes(v))) return 5;
+  return null;
+}
+
+function rank5(cards) {
+  const parsed = cards.map(parseCard);
+  const suits = parsed.map((c) => c.suit);
+  const values = parsed.map((c) => c.value);
+  const isFlush = suits.every((s) => s === suits[0]);
+  const straight = straightHigh(values);
+
+  const counts = new Map();
+  for (const v of values) counts.set(v, (counts.get(v) || 0) + 1);
+  const groups = Array.from(counts.entries())
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => b.count - a.count || b.value - a.value);
+
+  if (straight && isFlush) return { type: 8, ranks: [straight] };
+  if (groups[0].count === 4) {
+    const kicker = groups.find((g) => g.count === 1).value;
+    return { type: 7, ranks: [groups[0].value, kicker] };
+  }
+  if (groups[0].count === 3 && groups[1].count === 2) return { type: 6, ranks: [groups[0].value, groups[1].value] };
+  if (isFlush) return { type: 5, ranks: values.sort((a, b) => b - a) };
+  if (straight) return { type: 4, ranks: [straight] };
+  if (groups[0].count === 3) {
+    const kickers = groups.filter((g) => g.count === 1).map((g) => g.value).sort((a, b) => b - a);
+    return { type: 3, ranks: [groups[0].value, ...kickers] };
+  }
+  if (groups[0].count === 2 && groups[1].count === 2) {
+    const pairValues = groups.filter((g) => g.count === 2).map((g) => g.value).sort((a, b) => b - a);
+    const kicker = groups.find((g) => g.count === 1).value;
+    return { type: 2, ranks: [...pairValues, kicker] };
+  }
+  if (groups[0].count === 2) {
+    const kickers = groups.filter((g) => g.count === 1).map((g) => g.value).sort((a, b) => b - a);
+    return { type: 1, ranks: [groups[0].value, ...kickers] };
+  }
+  return { type: 0, ranks: values.sort((a, b) => b - a) };
+}
+
+function compareRank(a, b) {
+  if (a.type !== b.type) return a.type - b.type;
+  for (let i = 0; i < Math.max(a.ranks.length, b.ranks.length); i += 1) {
+    const av = a.ranks[i] || 0;
+    const bv = b.ranks[i] || 0;
+    if (av !== bv) return av - bv;
+  }
+  return 0;
+}
+
+function bestOfSeven(cards) {
+  let best = null;
+  for (let a = 0; a < cards.length - 4; a += 1) {
+    for (let b = a + 1; b < cards.length - 3; b += 1) {
+      for (let c = b + 1; c < cards.length - 2; c += 1) {
+        for (let d = c + 1; d < cards.length - 1; d += 1) {
+          for (let e = d + 1; e < cards.length; e += 1) {
+            const rank = rank5([cards[a], cards[b], cards[c], cards[d], cards[e]]);
+            if (!best || compareRank(rank, best) > 0) best = rank;
+          }
+        }
+      }
+    }
+  }
+  return best;
+}
+
+function handName(type) {
+  return ["Старшая карта", "Пара", "Две пары", "Сет", "Стрит", "Флеш", "Фулл хаус", "Каре", "Стрит-флеш"][type] || "Комбинация";
+}
+
+function activePlayers(state) {
+  return Array.from(state.players.values()).filter((p) => !p.folded);
+}
+
+function finishRound(state, winners, winningType) {
+  if (winners.length === 0) return;
+  const share = Math.floor(state.pot / winners.length);
+  let remainder = state.pot - share * winners.length;
+  for (const w of winners) {
+    w.chips += share;
+    if (remainder > 0) {
+      w.chips += 1;
+      remainder -= 1;
+    }
+  }
+  state.pot = 0;
+  for (const p of state.players.values()) p.bet = 0;
+  state.gameStarted = false;
+  state.currentTurn = null;
+  state.winner = {
+    names: winners.map((w) => w.name),
+    hand: handName(winningType),
+  };
+}
+
+function checkWinner(state) {
+  if (!state.gameStarted) return;
+  const active = activePlayers(state);
+  if (active.length === 1) {
+    finishRound(state, active, 0);
+    return;
+  }
+  if (state.community.length < 5) return;
+
+  let bestRank = null;
+  let winners = [];
+  for (const p of active) {
+    const rank = bestOfSeven([...p.hand, ...state.community]);
+    if (!bestRank || compareRank(rank, bestRank) > 0) {
+      bestRank = rank;
+      winners = [p];
+    } else if (compareRank(rank, bestRank) === 0) {
+      winners.push(p);
+    }
+  }
+  finishRound(state, winners, bestRank.type);
+}
+
 function publicState(roomId) {
   const state = getRoomState(roomId);
   return {
@@ -73,15 +221,18 @@ function publicState(roomId) {
       folded: p.folded,
       bet: p.bet,
       isTurn: state.currentTurn === p.id,
+      isDealer: state.dealerId === p.id,
     })),
     community: state.community,
     pot: state.pot,
     gameStarted: state.gameStarted,
+    dealerId: state.dealerId,
+    winner: state.winner,
   };
 }
 
 io.on("connection", (socket) => {
-  socket.on("join", ({ roomId, name }) => {
+  socket.on("join", ({ roomId, name, canBeDealer }) => {
     if (!roomId || !name) return;
     socket.join(roomId);
     socket.data.roomId = roomId;
@@ -95,6 +246,7 @@ io.on("connection", (socket) => {
       hand: [],
       folded: false,
       bet: 0,
+      canBeDealer: Boolean(canBeDealer),
     });
 
     const statePayload = publicState(roomId);
@@ -108,11 +260,18 @@ io.on("connection", (socket) => {
     const state = getRoomState(roomId);
     if (state.players.size < 2) return;
 
+    if (!state.dealerId || !state.players.has(state.dealerId)) {
+      state.dealerId = chooseDealer(state);
+      io.to(roomId).emit("state", publicState(roomId));
+    }
+    if (state.dealerId && socket.id !== state.dealerId) return;
+
     state.deck = createDeck();
     state.community = [];
     state.pot = 0;
     state.gameStarted = true;
     state.currentTurn = null;
+    state.winner = null;
 
     for (const p of state.players.values()) {
       p.hand = [state.deck.pop(), state.deck.pop()];
@@ -132,11 +291,13 @@ io.on("connection", (socket) => {
     if (!roomId) return;
     const state = getRoomState(roomId);
     if (!state.gameStarted) return;
+    if (state.dealerId && socket.id !== state.dealerId) return;
     if (state.community.length === 0) {
       state.community.push(state.deck.pop(), state.deck.pop(), state.deck.pop());
     } else if (state.community.length < 5) {
       state.community.push(state.deck.pop());
     }
+    checkWinner(state);
     io.to(roomId).emit("state", publicState(roomId));
   });
 
@@ -151,6 +312,7 @@ io.on("connection", (socket) => {
     player.bet += bet;
     state.pot += bet;
     nextTurn(roomId);
+    checkWinner(state);
     io.to(roomId).emit("state", publicState(roomId));
   });
 
@@ -162,6 +324,7 @@ io.on("connection", (socket) => {
     if (!player || state.currentTurn !== socket.id) return;
     player.folded = true;
     nextTurn(roomId);
+    checkWinner(state);
     io.to(roomId).emit("state", publicState(roomId));
   });
 
@@ -170,6 +333,7 @@ io.on("connection", (socket) => {
     if (!roomId) return;
     const state = getRoomState(roomId);
     state.players.delete(socket.id);
+    if (state.dealerId === socket.id) state.dealerId = chooseDealer(state);
     if (state.players.size === 0) rooms.delete(roomId);
     else if (state.currentTurn === socket.id) nextTurn(roomId);
     io.to(roomId).emit("state", publicState(roomId));

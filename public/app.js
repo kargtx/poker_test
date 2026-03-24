@@ -8,9 +8,12 @@ const communityEl = document.getElementById("community");
 const potEl = document.getElementById("pot");
 const handEl = document.getElementById("hand");
 const connStatusEl = document.getElementById("connStatus");
+const dealerLabelEl = document.getElementById("dealerLabel");
+const winnerLabelEl = document.getElementById("winnerLabel");
 
 const nameInput = document.getElementById("nameInput");
 const roomInput = document.getElementById("roomInput");
+const canDealerInput = document.getElementById("canDealerInput");
 
 const joinBtn = document.getElementById("joinBtn");
 const startBtn = document.getElementById("startBtn");
@@ -34,7 +37,7 @@ function setStatus(connected) {
 function emitJoin() {
   if (!joined || !currentRoomId || !currentName) return;
   if (!socket.connected) return;
-  socket.emit("join", { roomId: currentRoomId, name: currentName });
+  socket.emit("join", { roomId: currentRoomId, name: currentName, canBeDealer: canDealerInput?.checked });
 }
 
 function cardView(card) {
@@ -46,6 +49,7 @@ function cardView(card) {
 }
 
 function renderState(state) {
+  const isDealer = state.dealerId && state.dealerId === socket.id;
   playersEl.innerHTML = "";
   state.players.forEach((p) => {
     const div = document.createElement("div");
@@ -69,6 +73,21 @@ function renderState(state) {
 
   potEl.textContent = state.pot;
   renderHand();
+
+  if (dealerLabelEl) {
+    const dealer = state.players.find((p) => p.id === state.dealerId);
+    dealerLabelEl.textContent = dealer ? dealer.name : "—";
+  }
+  if (winnerLabelEl) {
+    if (state.winner && state.winner.names?.length) {
+      winnerLabelEl.textContent = `${state.winner.names.join(", ")} (${state.winner.hand})`;
+    } else {
+      winnerLabelEl.textContent = "—";
+    }
+  }
+
+  if (startBtn) startBtn.disabled = state.gameStarted || (state.dealerId && !isDealer);
+  if (dealBtn) dealBtn.disabled = !state.gameStarted || !isDealer;
 }
 
 function renderHand() {
