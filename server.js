@@ -84,7 +84,7 @@ function nextActiveAfter(state, fromId) {
 
 function nextTurn(roomId, fromId = null) {
   const state = getRoomState(roomId);
-  const next = nextActiveAfter(state, fromId ?? state.currentTurn);
+  const next = nextActiveAfter(state, fromId != null ? fromId : state.currentTurn);
   state.currentTurn = next;
 }
 

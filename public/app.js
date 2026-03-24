@@ -37,7 +37,8 @@ function setStatus(connected) {
 function emitJoin() {
   if (!joined || !currentRoomId || !currentName) return;
   if (!socket.connected) return;
-  socket.emit("join", { roomId: currentRoomId, name: currentName, canBeDealer: canDealerInput?.checked });
+  const canBeDealer = canDealerInput ? Boolean(canDealerInput.checked) : false;
+  socket.emit("join", { roomId: currentRoomId, name: currentName, canBeDealer });
 }
 
 function cardView(card) {
@@ -91,7 +92,7 @@ function renderState(state) {
     dealerLabelEl.textContent = dealer ? dealer.name : "—";
   }
   if (winnerLabelEl) {
-    if (state.winner && state.winner.names?.length) {
+    if (state.winner && state.winner.names && state.winner.names.length) {
       winnerLabelEl.textContent = `${state.winner.names.join(", ")} (${state.winner.hand})`;
     } else {
       winnerLabelEl.textContent = "—";
