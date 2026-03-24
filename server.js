@@ -425,7 +425,9 @@ io.on("connection", (socket) => {
     if (!roomId) return;
     if (String(password) !== "7788") return;
     const state = getRoomState(roomId);
-    state.pot = 0;
+    for (const p of state.players.values()) {
+      p.chips = 1000;
+    }
     io.to(roomId).emit("state", publicState(roomId));
   });
 });

@@ -22,7 +22,6 @@ const betInput = document.getElementById("betInput");
 const betBtn = document.getElementById("betBtn");
 const allInBtn = document.getElementById("allInBtn");
 const foldBtn = document.getElementById("foldBtn");
-const bankPassInput = document.getElementById("bankPassInput");
 const resetPotBtn = document.getElementById("resetPotBtn");
 
 let myHand = [];
@@ -151,7 +150,8 @@ betBtn.addEventListener("click", () => socket.emit("bet", betInput.value));
 allInBtn.addEventListener("click", () => socket.emit("allin"));
 foldBtn.addEventListener("click", () => socket.emit("fold"));
 resetPotBtn.addEventListener("click", () => {
-  const pass = bankPassInput ? bankPassInput.value : "";
+  const pass = window.prompt("Введите пароль для обновления фишек");
+  if (pass == null) return;
   socket.emit("reset_pot", { password: pass });
 });
 
