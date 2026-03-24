@@ -4,7 +4,12 @@ import { Server } from "socket.io";
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
 const PORT = process.env.PORT || 3000;
 
@@ -92,7 +97,9 @@ io.on("connection", (socket) => {
       bet: 0,
     });
 
-    io.to(roomId).emit("state", publicState(roomId));
+    const statePayload = publicState(roomId);
+    socket.emit("state", statePayload);
+    socket.to(roomId).emit("state", statePayload);
   });
 
   socket.on("start", () => {
