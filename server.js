@@ -186,7 +186,7 @@ function bettingRoundComplete(state) {
   const active = activePlayers(state);
   if (active.length <= 1) return false;
   for (const p of active) {
-    if (p.bet !== state.currentBet) return false;
+    if (p.bet !== state.currentBet && p.chips > 0) return false;
     if (!state.acted.has(p.id)) return false;
   }
   return true;
@@ -350,6 +350,31 @@ io.on("connection", (socket) => {
     const bet = Math.max(0, Math.min(player.chips, desired));
     const afterBet = player.bet + bet;
     if (afterBet < state.currentBet) return;
+    const prevCurrentBet = state.currentBet;
+    player.chips -= bet;
+    player.bet += bet;
+    state.pot += bet;
+    if (player.bet > state.currentBet) state.currentBet = player.bet;
+    if (state.currentBet > prevCurrentBet) state.acted = new Set([player.id]);
+    else state.acted.add(player.id);
+    state.lastActorId = player.id;
+    if (bettingRoundComplete(state)) {
+      advanceStreet(state);
+    } else {
+      nextTurn(roomId, player.id);
+    }
+    checkWinner(state);
+    io.to(roomId).emit("state", publicState(roomId));
+  });
+
+  socket.on("allin", () => {
+    const roomId = socket.data.roomId;
+    if (!roomId) return;
+    const state = getRoomState(roomId);
+    const player = state.players.get(socket.id);
+    if (!player || state.currentTurn !== socket.id) return;
+    const bet = player.chips;
+    if (bet <= 0) return;
     const prevCurrentBet = state.currentBet;
     player.chips -= bet;
     player.bet += bet;

@@ -20,6 +20,7 @@ const startBtn = document.getElementById("startBtn");
 const dealBtn = document.getElementById("dealBtn");
 const betInput = document.getElementById("betInput");
 const betBtn = document.getElementById("betBtn");
+const allInBtn = document.getElementById("allInBtn");
 const foldBtn = document.getElementById("foldBtn");
 
 let myHand = [];
@@ -99,16 +100,22 @@ function renderState(state) {
     }
   }
 
+  const self = state.players.find((p) => p.id === socket.id);
+  const isMyTurn = self ? self.isTurn : false;
   if (startBtn) startBtn.disabled = state.gameStarted || (state.dealerId && !isDealer);
   if (dealBtn) dealBtn.disabled = true;
+  if (betBtn) betBtn.disabled = !isMyTurn;
+  if (allInBtn) allInBtn.disabled = !isMyTurn;
+  if (foldBtn) foldBtn.disabled = !isMyTurn;
 
   if (betInput) {
-    const self = state.players.find((p) => p.id === socket.id);
     const already = self ? Number(self.bet) || 0 : 0;
+    const chips = self ? Number(self.chips) || 0 : 0;
     const minBet = Math.max(0, (Number(state.currentBet) || 0) - already);
     betInput.min = String(minBet);
     const currentVal = Number(betInput.value) || 0;
     if (currentVal < minBet) betInput.value = String(minBet);
+    if (chips > 0 && Number(betInput.value) > chips) betInput.value = String(chips);
     if (!state.gameStarted) betInput.value = String(minBet);
   }
 }
@@ -139,6 +146,7 @@ joinBtn.addEventListener("click", () => {
 startBtn.addEventListener("click", () => socket.emit("start"));
 dealBtn.addEventListener("click", () => socket.emit("deal"));
 betBtn.addEventListener("click", () => socket.emit("bet", betInput.value));
+allInBtn.addEventListener("click", () => socket.emit("allin"));
 foldBtn.addEventListener("click", () => socket.emit("fold"));
 
 socket.on("state", renderState);
