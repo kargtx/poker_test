@@ -22,6 +22,8 @@ const betInput = document.getElementById("betInput");
 const betBtn = document.getElementById("betBtn");
 const allInBtn = document.getElementById("allInBtn");
 const foldBtn = document.getElementById("foldBtn");
+const bankPassInput = document.getElementById("bankPassInput");
+const resetPotBtn = document.getElementById("resetPotBtn");
 
 let myHand = [];
 let joined = false;
@@ -148,6 +150,10 @@ dealBtn.addEventListener("click", () => socket.emit("deal"));
 betBtn.addEventListener("click", () => socket.emit("bet", betInput.value));
 allInBtn.addEventListener("click", () => socket.emit("allin"));
 foldBtn.addEventListener("click", () => socket.emit("fold"));
+resetPotBtn.addEventListener("click", () => {
+  const pass = bankPassInput ? bankPassInput.value : "";
+  socket.emit("reset_pot", { password: pass });
+});
 
 socket.on("state", renderState);
 socket.on("hand", (hand) => {

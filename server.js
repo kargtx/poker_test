@@ -419,6 +419,15 @@ io.on("connection", (socket) => {
     else if (state.currentTurn === socket.id) nextTurn(roomId);
     io.to(roomId).emit("state", publicState(roomId));
   });
+
+  socket.on("reset_pot", ({ password }) => {
+    const roomId = socket.data.roomId;
+    if (!roomId) return;
+    if (String(password) !== "7788") return;
+    const state = getRoomState(roomId);
+    state.pot = 0;
+    io.to(roomId).emit("state", publicState(roomId));
+  });
 });
 
 server.listen(PORT, () => {
