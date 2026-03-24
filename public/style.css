@@ -1,40 +1,55 @@
-﻿:root {
-  --bg: #f2efe8;
-  --card: #fff8ec;
-  --ink: #1b1b1b;
-  --accent: #0f6b3f;
+:root {
+  --bg: #0f1c1b;
+  --card: #f9f3e7;
+  --ink: #1a1f1d;
+  --accent: #1d7a5a;
+  --accent-2: #d6a84a;
   --danger: #b11a1a;
+  --muted: #6b6b6b;
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: "Georgia", "Times New Roman", serif;
-  background: radial-gradient(circle at 20% 20%, #fff7d9, #e6dfcf 45%, #d9d0bf 100%);
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  background:
+    radial-gradient(1200px 600px at 10% 0%, rgba(255, 255, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 90% 10%, rgba(214, 168, 74, 0.18), transparent 55%),
+    linear-gradient(180deg, #0d1918 0%, #122220 100%);
   color: var(--ink);
+  min-height: 100vh;
 }
 
 .app {
-  max-width: 900px;
-  margin: 32px auto;
-  padding: 24px;
+  max-width: 980px;
+  margin: 28px auto;
+  padding: 20px;
 }
 
 header h1 {
   margin: 0 0 8px;
-  font-size: 36px;
-  letter-spacing: 1px;
+  font-size: 40px;
+  letter-spacing: 1.2px;
+  color: #f7f1e6;
+  text-shadow: 0 6px 20px rgba(0,0,0,0.35);
 }
 
-header p { margin: 0 0 24px; }
+header p {
+  margin: 0 0 24px;
+  color: rgba(247, 241, 230, 0.8);
+}
 
 .panel {
   background: var(--card);
-  border: 2px solid #c9bca3;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  padding: 22px;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  animation: panelIn 0.4s ease-out;
 }
 
 .panel.hidden { display: none; }
@@ -59,27 +74,32 @@ label.checkbox input {
 input {
   display: block;
   width: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px;
   margin-top: 6px;
-  border: 1px solid #b6a98f;
-  border-radius: 8px;
+  border: 1px solid #c9bca3;
+  border-radius: 10px;
   background: #fffdf6;
+  font-size: 14px;
 }
 
 button {
-  padding: 10px 14px;
+  padding: 12px 14px;
   border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: white;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1f8b66, #15654a);
+  color: #fff8ea;
   cursor: pointer;
   font-weight: 600;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
 }
 
-button.danger { background: var(--danger); }
+button:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,0.22); }
+button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+button.danger { background: linear-gradient(180deg, #c63636, #8f1d1d); }
 
-.roomLine { margin-bottom: 16px; font-weight: 600; }
-.statusLine { margin-bottom: 16px; font-weight: 600; }
+.roomLine { margin-bottom: 10px; font-weight: 700; }
+.statusLine { margin-bottom: 10px; font-weight: 600; color: var(--muted); }
 
 .status {
   display: inline-block;
@@ -106,7 +126,8 @@ button.danger { background: var(--danger); }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  gap: 12px;
 }
 
 .community .card,
@@ -114,13 +135,15 @@ button.danger { background: var(--danger); }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 64px;
-  margin-right: 8px;
+  width: 52px;
+  height: 72px;
+  margin-right: 10px;
   background: #fff;
-  border: 1px solid #b6a98f;
-  border-radius: 6px;
+  border: 1px solid #d3c4a6;
+  border-radius: 8px;
   font-weight: 700;
+  box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+  animation: cardIn 0.2s ease-out;
 }
 
 .card-red { color: #b11a1a; }
@@ -128,21 +151,22 @@ button.danger { background: var(--danger); }
 
 .players {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .player {
-  border: 1px solid #b6a98f;
-  padding: 10px;
-  border-radius: 8px;
+  border: 1px solid #d0c2a5;
+  padding: 12px;
+  border-radius: 12px;
   background: #fffdf6;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
 }
 
 .pCards .card {
-  width: 32px;
-  height: 44px;
+  width: 36px;
+  height: 48px;
   margin-right: 6px;
   font-size: 12px;
 }
@@ -151,11 +175,48 @@ button.danger { background: var(--danger); }
 
 .actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
   align-items: center;
 }
 
 .hand { margin: 16px 0; }
 
 .handTitle { font-weight: 600; margin-bottom: 6px; }
+
+.pot {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid #d3c4a6;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+@keyframes panelIn {
+  from { transform: translateY(6px); opacity: 0.2; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes cardIn {
+  from { transform: translateY(4px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@media (max-width: 720px) {
+  .app { margin: 12px auto; padding: 12px; }
+  header h1 { font-size: 30px; }
+  .panel { padding: 16px; }
+  .board { flex-direction: column; align-items: flex-start; }
+  .community .card,
+  .handCards .card { width: 44px; height: 62px; margin-right: 8px; }
+  .players { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .actions { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  header h1 { font-size: 26px; }
+  header p { font-size: 14px; }
+  input, button { font-size: 14px; }
+  .community .card,
+  .handCards .card { width: 40px; height: 56px; }
+}
